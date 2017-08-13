@@ -1,12 +1,14 @@
 import io
 import os
+import sys
 import urllib.request
+from builtins import len
 
 import requests
 from bs4 import BeautifulSoup
 
 AUTHOR = 'Vu Dinh Anh'
-VERSION = '0.0.0'
+VERSION = '0.0.1'
 
 DEFAULT_PATH = 'CSN_downloader'
 
@@ -23,11 +25,20 @@ def download_music_file(url):
 
     path_to_save = cwd + '\\' + DEFAULT_PATH + '\\' + file_name
 
-    r = requests.get(url)
-    with io.open(path_to_save, 'wb')as f:
-        f.write(r.content)
+    r = requests.get(url, stream=True)
+    total_length = r.headers.get('content-length')
 
-    print("Downloaded :" + file_name)
+    print("Downloading :" + file_name, end='\n')
+    with io.open(path_to_save, 'wb')as f:
+        dl = 0
+        total_length = int(total_length)
+        for data in r.iter_content(chunk_size=4096):
+            dl += len(data)
+            f.write(data)
+            done = int(50 * dl / total_length)
+            sys.stdout.write("\r[%s%s]" % ('=' * done, ' ' * (50 - done)))
+            sys.stdout.flush()
+    print('\n')
 
 
 def get_download_url(page):
@@ -83,7 +94,7 @@ def main():
                 if (quality in u):
                     download_music_file(u)
         else:
-            #if  user's quality choosen is not available for download, find  the nearest download quality
+            # if  user's quality choosen is not available for download, find  the nearest download quality
             for q in DOWNLOAD_QUALITY[DOWNLOAD_QUALITY.index(quality) - 1::-1]:
                 keep_find_quality = True
                 for u in download_urls:
