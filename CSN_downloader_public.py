@@ -2,17 +2,31 @@ import io
 import os
 import sys
 import urllib.request
+import platform
 from builtins import len
 
 import requests
 from bs4 import BeautifulSoup
 
 AUTHOR = 'Vu Dinh Anh'
-VERSION = '0.0.1'
+VERSION = '0.0.2'
 
 DEFAULT_PATH = 'CSN_downloader'
 
 DOWNLOAD_QUALITY = ['32kbps', '128kbps', '320kbps', '500kbps', 'Lossless']
+
+SLASH = ''
+_backslashe = '\\'
+_forwardslashe = '/'
+
+
+def get_system_platform():
+    _system = platform.system().lower()
+    global SLASH
+    if _system == 'windows':
+        SLASH = _backslashe
+    elif _system == 'linux':
+        SLASH = _forwardslashe
 
 
 def download_music_file(url):
@@ -20,10 +34,10 @@ def download_music_file(url):
     file_name = url.split('/')[-1]
     file_name = file_name[file_name.index('v5=') + 3:]
     file_name = urllib.request.unquote(file_name)  # get file name, escape from URL pattern
-    if not os.path.exists(cwd + '\\' + DEFAULT_PATH):
-        os.makedirs(cwd + '\\' + DEFAULT_PATH)
+    if not os.path.exists(cwd + SLASH + DEFAULT_PATH):
+        os.makedirs(cwd + SLASH + DEFAULT_PATH)
 
-    path_to_save = cwd + '\\' + DEFAULT_PATH + '\\' + file_name
+    path_to_save = cwd + SLASH + DEFAULT_PATH + SLASH + file_name
 
     r = requests.get(url, stream=True)
     total_length = r.headers.get('content-length')
@@ -69,6 +83,9 @@ def get_all_download_pages(content):
 
 
 def main():
+    # get system platform
+    get_system_platform()
+
     # get url
     url = input("Enter url: ")
 
@@ -85,7 +102,7 @@ def main():
     custom_path = input('Enter folder to save (Enter to skip): ')
     if custom_path is not '':
         global DEFAULT_PATH
-        DEFAULT_PATH += '\\' + custom_path
+        DEFAULT_PATH += SLASH + custom_path
 
     for download_page in list_download_page:
         download_urls = get_download_url(page=download_page)
