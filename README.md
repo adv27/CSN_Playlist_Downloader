@@ -2,7 +2,7 @@
     Simple tool for download whole playlist on chiasenhac.com
 
 # Demo
-    ![alt text](http://g.recordit.co/90DmoF221P.gif)
+    ![alt tag](http://g.recordit.co/90DmoF221P.gif)
     
 # Required lib
     - requests
