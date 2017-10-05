@@ -2,7 +2,11 @@
     Simple tool for download whole playlist on chiasenhac.com
 
 # Demo
-    ![alt tag](http://g.recordit.co/90DmoF221P.gif)
+    <br>
+        <img src="http://g.recordit.co/90DmoF221P.gif"/>
+    <br>
+    ![myimage-alt-tag](http://g.recordit.co/90DmoF221P.gif)
+    ![](http://g.recordit.co/90DmoF221P.gif)
     
 # Required lib
     - requests
