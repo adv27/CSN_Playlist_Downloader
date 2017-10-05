@@ -1,5 +1,6 @@
 # CSN_Playlist_Downloader
     Simple tool for download whole playlist on chiasenhac.com
+    Build file is for non-python installation version
 
 # Demo
 ![Demo](http://g.recordit.co/90DmoF221P.gif)
