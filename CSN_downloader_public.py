@@ -1,9 +1,11 @@
 import io
 import os
-import sys
-import urllib.request
 import platform
-from builtins import len
+import shutil
+import urllib.request
+from builtins import filter
+from itertools import repeat
+from multiprocessing import Pool
 
 import requests
 from bs4 import BeautifulSoup
@@ -20,6 +22,17 @@ _backslashe = '\\'
 _forwardslashe = '/'
 
 
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+
 def get_system_platform():
     _system = platform.system().lower()
     global SLASH
@@ -32,27 +45,28 @@ def get_system_platform():
 def download_music_file(url):
     cwd = os.getcwd()  # current working directory
     file_name = url.split('/')[-1]
-    file_name = file_name[file_name.index('v5=') + 3:]
     file_name = urllib.request.unquote(file_name)  # get file name, escape from URL pattern
-    if not os.path.exists(cwd + SLASH + DEFAULT_PATH):
-        os.makedirs(cwd + SLASH + DEFAULT_PATH)
+    if not os.path.exists(cwd + '\\' + DEFAULT_PATH):
+        os.makedirs(cwd + '\\' + DEFAULT_PATH)
 
-    path_to_save = cwd + SLASH + DEFAULT_PATH + SLASH + file_name
+    path_to_save = cwd + '\\' + DEFAULT_PATH + '\\' + file_name
 
     r = requests.get(url, stream=True)
     total_length = r.headers.get('content-length')
 
-    print("Downloading :" + file_name, end='\n')
+    print("{0}Downloading: {1:70} | {2:.2f}mb{3}".
+          format(bcolors.OKBLUE,
+                 file_name,
+                 float(total_length) / 1048576,  # bytes to mb
+                 bcolors.ENDC),
+          end='\n')
     with io.open(path_to_save, 'wb')as f:
-        dl = 0
-        total_length = int(total_length)
-        for data in r.iter_content(chunk_size=4096):
-            dl += len(data)
-            f.write(data)
-            done = int(50 * dl / total_length)
-            sys.stdout.write("\r[%s%s]" % ('=' * done, ' ' * (50 - done)))
-            sys.stdout.flush()
-    print('\n')
+        shutil.copyfileobj(r.raw, f)
+    print("{0}Downloaded:  {1}{2}".
+          format(bcolors.OKGREEN,
+                 file_name,
+                 bcolors.ENDC),
+          end='\n')
 
 
 def get_download_url(page):
@@ -60,10 +74,8 @@ def get_download_url(page):
     soup = BeautifulSoup(content, 'html.parser')
     download_div = soup.find('div', attrs={'id': 'downloadlink2'})  # div contain all download option
 
-    download_urls = list()
     anchor_tags = download_div.find_all('a')
-    for anchor_tag in anchor_tags:
-        download_urls.append(anchor_tag['href'])
+    download_urls = list(map(lambda a: a['href'], anchor_tags))
 
     return download_urls
 
@@ -75,11 +87,28 @@ def get_page_content(url):
 def get_all_download_pages(content):
     soup = BeautifulSoup(content, 'html.parser')
     table = soup.find('table', attrs={'border': '0', 'class': 'tbtable'})
-    all_anchor_tags = table.find_all('a', attrs={'target': '_blank'})  # only download link has 'taget' : '_blank' attr
-    download_links = list()  # for storing download_link
-    for anchor_tag in all_anchor_tags:
-        download_links.append(anchor_tag['href'])  # get download link from 'a' tag
+    anchor_tags = table.find_all('a', attrs={'target': '_blank'})  # only download link has 'taget' : '_blank' attr
+    download_links = list(map(lambda a: a['href'], anchor_tags))
     return download_links
+
+
+def download(download_page: str, quality):
+    download_urls = get_download_url(page=download_page)
+    if any(quality in u for u in download_urls):
+        # for u in download_urls:
+        #     if (quality in u):
+        for u in list(filter(lambda x: quality in x, download_urls)):
+            download_music_file(u)
+    else:
+        # if  user's quality choosen is not available for download, find  the nearest download quality
+        for q in DOWNLOAD_QUALITY[DOWNLOAD_QUALITY.index(quality) - 1::-1]:
+            keep_find_quality = True
+            for u in download_urls:
+                if q in u:
+                    download_music_file(u)
+                    keep_find_quality = False
+            if keep_find_quality is False:
+                break
 
 
 def main():
@@ -104,22 +133,9 @@ def main():
         global DEFAULT_PATH
         DEFAULT_PATH += SLASH + custom_path
 
-    for download_page in list_download_page:
-        download_urls = get_download_url(page=download_page)
-        if any(quality in u for u in download_urls):
-            for u in download_urls:
-                if (quality in u):
-                    download_music_file(u)
-        else:
-            # if  user's quality choosen is not available for download, find  the nearest download quality
-            for q in DOWNLOAD_QUALITY[DOWNLOAD_QUALITY.index(quality) - 1::-1]:
-                keep_find_quality = True
-                for u in download_urls:
-                    if (q in u):
-                        download_music_file(u)
-                        keep_find_quality = False
-                if keep_find_quality is False:
-                    break
+    # using multiprocessing for downloading
+    with Pool(15) as pool:
+        pool.starmap(download, zip(list_download_page, repeat(quality)))
 
 
 if __name__ == '__main__':
