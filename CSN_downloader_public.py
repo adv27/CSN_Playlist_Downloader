@@ -100,11 +100,11 @@ def main():
         global DEFAULT_PATH
         DEFAULT_PATH = os.path.join(DEFAULT_PATH,custom_path)
 
-    # using multiprocessing for downloading
     download_urls = list(map(lambda p: get_download_url(p,quality),list_download_page))
     save_at = DEFAULT_PATH
     for url in download_urls:
         download_music_file(url,save_at)
+    # using multiprocessing for downloading
     # with Pool(25) as pool:
     #     pool.starmap(download_music_file, zip(download_urls,repeat(save_at)))
 
