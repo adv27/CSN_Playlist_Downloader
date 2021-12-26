@@ -49,9 +49,8 @@ def get_all_download_pages(content):
     soup = BeautifulSoup(content, 'html.parser')
     table = soup.find('table', attrs={'border': '0', 'class': 'tbtable'})
     # only download link has 'taget' : '_blank' attr
-    anchor_tags = table.find_all('a',attrs={'target':'_blank'})  
-    download_links = list(map(lambda a: a['href'], anchor_tags))
-    return download_links
+    anchor_tags = table.find_all('a',attrs={'target':'_blank'})
+    return list(map(lambda a: a['href'], anchor_tags))
 
 
 def get_download_urls(page):
@@ -62,9 +61,7 @@ def get_download_urls(page):
     download_div = soup.find('div', attrs={'id':'downloadlink2'})  
 
     anchor_tags = download_div.find_all('a')
-    download_urls = list(map(lambda a: a['href'], anchor_tags))
-
-    return download_urls
+    return list(map(lambda a: a['href'], anchor_tags))
 
 
 def get_download_url(download_page: str, quality):
